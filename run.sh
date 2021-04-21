@@ -11,11 +11,12 @@ mkdir -p results
 
 # Run Pangolin
 source $CONDA/activate pangolin
+pangolin --update
 pangolin ri_sequences.fa -o results/pangolin --alignment --no-temp
 
 # Run nextalign
 $BIN/nextalign \
-	--sequences=ri_sequences.fasta \
+	--sequences=ri_sequences.fa \
 	--reference=src/reference.fasta \
 	--genemap=src/genemap.gff \
 	--genes=E,M,N,ORF10,ORF14,ORF1a,ORF1b,ORF3a,ORF6,ORF7a,ORF7b,ORF8,ORF9b,S \
@@ -24,6 +25,6 @@ $BIN/nextalign \
 # Generate additional results
 python src/metadata.py ri_sequences.fa > ri_metadata.tsv
 python src/mutations.py
-Rscript src/cumulative.R
 python src/concern.py
+Rscript src/cumulative.R
 
