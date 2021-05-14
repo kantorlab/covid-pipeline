@@ -27,24 +27,19 @@ concern = [
 ]
 
 mutations = json.load(open("results/mutations.json"))
-pangolin = pd.read_csv("results/pangolin/lineage_report.csv", usecols=["taxon", "status", "lineage"]).rename(columns={"taxon": "id"})
-metadata = pd.read_csv("ri_metadata.tsv", usecols=["strain", "date"], delimiter="\t").rename(columns={"strain": "id"})
-
-seqs = pangolin.merge(metadata, how="left", on="id")
-seqs = seqs.sort_values("date")
-seqs = seqs[seqs["status"] == "passed_qc"]
+seqs = pd.read_csv("results/qc-passed.csv", usecols=["strain", "date", "pangolin.lineage"]).sort_values("date")
 
 detail = []
 
 for row in seqs.itertuples():
-    for mutation in mutations.get(row.id, []):
+    for mutation in mutations.get(row.strain, []):
         if mutation in concern:
-            detail.append([row.id, row.date, mutation])
+            detail.append([row.strain, row.date, mutation])
 
 pd.DataFrame.from_records(detail, columns=["sample", "date", "mutation"]).to_csv("results/concern-long.csv", index=False)
 
 seqs["mutations"] = [
-    ",".join(mutation for mutation in concern if mutation in frozenset(mutations.get(row.id, [])))
+    ",".join(mutation for mutation in concern if mutation in frozenset(mutations.get(row.strain, [])))
     for row in seqs.itertuples()
 ]
 print(seqs["mutations"].value_counts())

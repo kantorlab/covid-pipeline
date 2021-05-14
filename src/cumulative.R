@@ -1,9 +1,6 @@
 library(tidyverse)
 
-all <- read_tsv("ri_metadata.tsv")
-print(nrow(all))
-
-ri <- filter(all, division=="Rhode Island") %>%
+ri <- read_csv("results/qc-passed.csv") %>%
   mutate(
     step=1,
     Source=as.factor(case_when(
