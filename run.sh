@@ -6,13 +6,22 @@
 set -e
 CONDA=/gpfs/data/rkantor/conda/bin
 BIN=/gpfs/data/rkantor/bin
+source $CONDA/activate covid-v1
 
 mkdir -p results
 
-# Run Pangolin
-source $CONDA/activate pangolin
+# Run pangolin
 pangolin --update
 pangolin ri_sequences.fa -o results/pangolin --alignment --no-temp
+
+# Run nextclade
+nextclade \
+	--input-fasta ri_sequences.fa \
+	--output-json 'results/nextclade.json' \
+	--output-csv 'results/nextclade.csv' \
+	--output-tsv 'results/nextclade.tsv' \
+	--output-tree 'results/nextclade.auspice.json' \
+>results/nextclade.log
 
 # Run nextalign
 $BIN/nextalign \
