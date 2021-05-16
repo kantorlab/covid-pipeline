@@ -1,0 +1,22 @@
+{
+  "privateMutations": {
+    "enabled": false,
+    "typical": 2,
+    "cutoff": 8
+  },
+  "missingData": {
+    "enabled": true,
+    "missingDataThreshold": 2700,
+    "scoreBias": 300
+  },
+  "snpClusters": {
+    "enabled": true,
+    "windowSize": 100,
+    "clusterCutOff": 4,
+    "scoreWeight": 50
+  },
+  "mixedSites": {
+    "enabled": true,
+    "mixedSitesThreshold": 10
+  }
+}

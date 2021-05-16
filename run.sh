@@ -21,6 +21,7 @@ nextclade \
 	--output-csv 'results/nextclade.csv' \
 	--output-tsv 'results/nextclade.tsv' \
 	--output-tree 'results/nextclade.auspice.json' \
+	--input-qc-config 'src/qcRulesConfig.json' \
 >results/nextclade.log
 
 # Run nextalign
