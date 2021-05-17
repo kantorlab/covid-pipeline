@@ -14,7 +14,7 @@ ri <- read_csv("results/qc-passed.csv") %>%
 print(select(filter(ri, Source=="Other"), strain), n=100)
 
 nseq <- nrow(ri)
-earliest <- as.Date("2020-03-01")
+earliest <- min(ri$date)
 latest <- max(ri$date)
 
 ri <- group_by(ri, date, Source) %>%
@@ -24,11 +24,10 @@ ri <- group_by(ri, date, Source) %>%
   mutate(Cumulative=cumsum(step)) %>%
   ungroup()
 
-write_csv(ri, "results/cumulative.csv")
+write_csv(ri, "results/num-sequences.csv")
 
 # Summarize by week
-ri <- filter(ri, date >= earliest) %>%
-  mutate(week=lubridate::floor_date(date, unit="week")) %>%
+ri <- mutate(ri, week=lubridate::floor_date(date, unit="week")) %>%
   group_by(week, Source) %>%
   summarise(Cumulative=max(Cumulative)) %>%
   ungroup() %>%
@@ -99,7 +98,7 @@ theme(
   panel.grid.major.y=element_line(color="gray", size=0.1)
 )
 
-pdf(file="results/cumulative.pdf", width=4, height=4)
+pdf(file="results/num-sequences.pdf", width=4, height=4)
 print(g)
 dev.off()
 

@@ -47,5 +47,6 @@ python src/qc.py
 
 python src/mutations.py
 python src/concern.py
-Rscript src/cumulative.R
+Rscript src/num-sequences.R
+Rscript src/num-voc-voi.R
 
