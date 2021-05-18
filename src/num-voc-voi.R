@@ -1,13 +1,11 @@
 library(tidyverse)
 
-ri <- read_csv("results/qc-passed.csv")
-cdc <- read_tsv("src/cdc-voc-voi.tsv")
-
-ri <- left_join(ri, cdc, by="pangolin.lineage") %>%
+ri <- read_csv("results/qc-passed.csv") %>%
       select(strain, date, pangolin.lineage, cdc.classification) %>%
       mutate(cdc.classification=replace_na(cdc.classification, "Non-VOC/Non-VOI"))
 
 print(ri)
+print(group_by(ri, cdc.classification) %>% tally())
 
 nseq <- nrow(ri)
 earliest <- as.Date("2020-03-01")

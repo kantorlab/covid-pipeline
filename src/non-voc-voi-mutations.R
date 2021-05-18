@@ -1,24 +1,27 @@
 library(tidyverse)
 
 ri <- read_csv("results/qc-passed.csv") %>%
-      select(date, pangolin.lineage, cdc.classification) %>%
+      select(strain, date, pangolin.lineage, cdc.classification) %>%
       arrange(date)
 
-top <- group_by(ri, pangolin.lineage) %>% tally() %>% arrange(desc(n))
-write_csv(top, "results/top-lineages.csv")
+muts <- read_csv("results/concern-long.csv") %>%
+        select(sample, mutation) %>%
+        rename(strain=sample) %>%
+        mutate(value=1) %>%
+        pivot_wider(names_from=mutation, values_from=value)
+print(muts)
 
-ri <- mutate(ri,
-	     step=1,
-	     voc=as.factor(case_when(pangolin.lineage == "B.1.1.7" ~ "B.1.1.7 (VOC)",
-				     pangolin.lineage == "B.1.526" ~ "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2",
-				     pangolin.lineage == "B.1.526.1" ~ "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2",
-				     pangolin.lineage == "B.1.526.2" ~ "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2",
-				     pangolin.lineage == "B.1"   ~ "B.1",
-				     pangolin.lineage == "B.1.2"   ~ "B.1.2",
-				     pangolin.lineage == "B.1.375" ~ "B.1.375",
-				     TRUE                          ~ "Other")))
+ri <- left_join(ri, muts, by="strain") %>%
+      mutate(step=1,
+             voc=as.factor(case_when(cdc.classification == "VOC" ~ "VOC/VOI",
+                                     cdc.classification == "VOI" ~ "VOC/VOI",
+                                     `S:E484K` == 1  & `S:D614G` == 1 ~ "Non-VOC/Non-VOI with E484K and D614G",
+                                     `S:E484K` == 1 ~ "Non-VOC/Non-VOI with E484K",
+                                     `S:D614G` == 1 ~ "Non-VOC/Non-VOI with D614G",
+                                     TRUE                          ~ "Other")))
 
 nseq <- nrow(ri)
+nnon <- sum(ri$voc != "VOC/VOI")
 earliest <- min(ri$date)
 latest <- max(ri$date)
 
@@ -45,10 +48,17 @@ ri <- tibble(week=seq.Date(from=lubridate::floor_date(earliest, unit="week"), to
 
 print(ri)
 
+write_csv(ri, "results/non-voc-voi-mutations.csv")
+
 ri <- ri %>%
   pivot_longer(!week, names_to="voc", values_to="Cumulative") %>%
-  mutate(voc=factor(voc, levels=c("B.1.1.7 (VOC)", "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2", "B.1.2", "B.1.375", "B.1", "Other")))
-
+  mutate(voc=factor(voc, levels=c(
+    "VOC/VOI",
+    "Non-VOC/Non-VOI with E484K and D614G",
+    "Non-VOC/Non-VOI with E484K",
+    "Non-VOC/Non-VOI with D614G",
+    "Other"
+  )))
 print(ri)
 
 g <- ggplot(data=ri) +
@@ -59,10 +69,16 @@ geom_text(
   aes(x=x, y=y, label=label, vjust=0, hjust=0),
   size=2.5
 ) +
+geom_hline(yintercept=nnon, linetype="dashed", color="black", size=0.25) +
+geom_text(
+  data=data.frame(x=earliest, y=c(1.02*nnon), label=c(paste(scales::comma(nnon), "non-COV/non-COI sequences"))),
+  aes(x=x, y=y, label=label, vjust=0, hjust=0),
+  size=2.5
+) +
 labs(
   x="Date of Sample",
   y="Cumulative Number of Sequences",
-  fill="Lineage"
+  fill="CDC Classification"
 ) +
 scale_x_date(
   breaks=waiver(),
@@ -73,22 +89,22 @@ scale_x_date(
 scale_y_continuous(breaks=seq(0, 3000, 500), position="right") +
 scale_fill_manual(
   values=c(
-    "B.1.1.7 (VOC)"="#e41a1c",
-    "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2"="#ff7f00",
-    "B.1.2"="#abd9e9",
-    "B.1.375"="#74add1",
-    "B.1"="#4575b4",
+    "VOC/VOI"="darkgray",
+    "Non-VOC/Non-VOI with E484K and D614G"="#f46d43",
+    "Non-VOC/Non-VOI with E484K"="#fdae61",
+    "Non-VOC/Non-VOI with D614G"="#fee090",
     "Other"="gray"
   )
 ) +
 theme_classic() +
 theme(
   title=element_text(size=9),
-  legend.position=c(0, 0.5),
+  legend.position=c(0, 0.35),
   legend.justification=c("left", "center"),
   legend.title=element_text(size=9),
   legend.text=element_text(size=8),
   legend.key.size=unit(0.1, "in"),
+  legend.background=element_blank(),
   axis.line=element_blank(),
   axis.ticks.x=element_line(size=0.25),
   axis.ticks.y=element_blank(),
@@ -97,7 +113,7 @@ theme(
   panel.grid.major.y=element_line(color="gray", size=0.1)
 )
 
-pdf(file="results/top-lineages.pdf", width=4, height=3.5)
+pdf(file="results/non-voc-voi-mutations.pdf", width=4, height=3.5)
 print(g)
 dev.off()
 

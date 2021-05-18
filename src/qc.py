@@ -23,6 +23,10 @@ nextstrain = pd.read_csv(
     )
 ri = ri.merge(nextstrain, how="outer", on="strain", validate="1:1")
 
+# Join CDC
+cdc = pd.read_csv("src/cdc-voc-voi.tsv", sep="\t")
+ri = ri.merge(cdc, how="left", on="pangolin.lineage")
+
 failed = (
     (ri["pangolin.status"] != "passed_qc") |
     (ri["nextclade.qc.overallStatus"] == "bad") |
