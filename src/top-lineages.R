@@ -1,37 +1,46 @@
 library(tidyverse)
 
-ri <- read_csv("results/qc-passed.csv") %>%
-  mutate(
-    step=1,
-    Source=as.factor(case_when(
-      startsWith(strain, "hCoV-19/USA/RI-Broad") ~ "Broad",
-      startsWith(strain, "hCoV-19/USA/RI-CDC")   ~ "CDC",
-      startsWith(strain, "hCoV-19/USA/RI-RISHL") ~ "RISHL",
-      startsWith(strain, "hCoV-19/USA/RI_RKL")   ~ "Kantor Lab",
-      TRUE                                       ~ "Other"))
-  ) %>%
-  arrange(date)
-print(select(filter(ri, Source=="Other"), strain), n=100)
+ri <- read_csv("results/qc-passed.csv")
+
+top <- group_by(ri, pangolin.lineage) %>% tally() %>% arrange(n) %>% tail(5)
+print(top)
+
+cdc <- read_tsv("src/cdc-voc-voi.tsv")
+ri <- left_join(ri, cdc, by="pangolin.lineage") %>%
+      select(date, pangolin.lineage, cdc.classification) %>%
+      arrange(date)
+print(ri)
+
+ri <- mutate(ri,
+	     step=1,
+	     voc=as.factor(case_when(pangolin.lineage == "B.1.1.7" ~ "B.1.1.7 (VOC)",
+				     pangolin.lineage == "B.1.526" ~ "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2",
+				     pangolin.lineage == "B.1.526.1" ~ "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2",
+				     pangolin.lineage == "B.1.526.2" ~ "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2",
+				     pangolin.lineage == "B.1"   ~ "B.1",
+				     pangolin.lineage == "B.1.2"   ~ "B.1.2",
+				     pangolin.lineage == "B.1.375" ~ "B.1.375",
+				     TRUE                          ~ "Other")))
 
 nseq <- nrow(ri)
 earliest <- min(ri$date)
 latest <- max(ri$date)
 
-ri <- group_by(ri, date, Source) %>%
+ri <- group_by(ri, date, voc) %>%
   summarise(step=sum(step)) %>%
   ungroup() %>%
-  group_by(Source) %>%
+  group_by(voc) %>%
   mutate(Cumulative=cumsum(step)) %>%
   ungroup()
 
-write_csv(ri, "results/num-sequences.csv")
+write_csv(ri, "results/top-lineages.csv")
 
 # Summarize by week
 ri <- mutate(ri, week=lubridate::floor_date(date, unit="week")) %>%
-  group_by(week, Source) %>%
+  group_by(week, voc) %>%
   summarise(Cumulative=max(Cumulative)) %>%
   ungroup() %>%
-  pivot_wider(names_from=Source, values_from=Cumulative)
+  pivot_wider(names_from=voc, values_from=Cumulative)
 
 print(ri)
 
@@ -43,13 +52,13 @@ ri <- tibble(week=seq.Date(from=lubridate::floor_date(earliest, unit="week"), to
 print(ri)
 
 ri <- ri %>%
-  pivot_longer(!week, names_to="Source", values_to="Cumulative") %>%
-  mutate(Source=factor(Source, levels=c("CDC", "Broad", "Kantor Lab", "RISHL", "Other")))
+  pivot_longer(!week, names_to="voc", values_to="Cumulative") %>%
+  mutate(voc=factor(voc, levels=c("B.1.1.7 (VOC)", "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2", "B.1.2", "B.1.375", "B.1", "Other")))
 
 print(ri)
 
 g <- ggplot(data=ri) +
-geom_area(aes(x=week, y=Cumulative, fill=Source)) +
+geom_area(aes(x=week, y=Cumulative, fill=voc)) +
 geom_hline(yintercept=nseq, linetype="dashed", color="black", size=0.25) +
 geom_text(
   data=data.frame(x=earliest, y=c(1.02*nseq), label=c(paste(scales::comma(nseq), "RI SARS-CoV-2 sequences as of", strftime(latest, format="%B %-m, %Y")))),
@@ -59,7 +68,7 @@ geom_text(
 labs(
   x="Date of Sample",
   y="Cumulative Number of Sequences",
-  fill="Source Lab"
+  fill="Lineage"
 ) +
 scale_x_date(
   breaks=waiver(),
@@ -70,11 +79,12 @@ scale_x_date(
 scale_y_continuous(breaks=seq(0, 3000, 500), position="right") +
 scale_fill_manual(
   values=c(
-    "CDC"="#e41a1c",
-    "Broad"="#377eb8",
-    "Kantor Lab"="#4daf4a",
-    "RISHL"="#984ea3",
-    "Other"="darkgray"
+    "B.1.1.7 (VOC)"="#e41a1c",
+    "B.1.526 (VOI) / B.1.526.1 (VOI) / B.1.526.2"="#ff7f00",
+    "B.1.2"="#abd9e9",
+    "B.1.375"="#74add1",
+    "B.1"="#4575b4",
+    "Other"="gray"
   )
 ) +
 theme_classic() +
@@ -93,7 +103,7 @@ theme(
   panel.grid.major.y=element_line(color="gray", size=0.1)
 )
 
-pdf(file="results/num-sequences.pdf", width=4, height=4)
+pdf(file="results/top-lineages.pdf", width=4, height=3.5)
 print(g)
 dev.off()
 

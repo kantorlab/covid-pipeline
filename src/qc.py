@@ -1,6 +1,6 @@
 import pandas as pd
 
-ri = pd.read_csv("ri_metadata.tsv", sep="\t")
+ri = pd.read_csv("ri_metadata.tsv", sep="\t").sort_values("date")
 
 # Join Pangolin
 pangolin = pd.read_csv("results/pangolin/lineage_report.csv")
