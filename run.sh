@@ -51,3 +51,15 @@ Rscript src/num-sequences.R
 Rscript src/num-voc-voi.R
 Rscript src/top-lineages.R
 
+# Run nextalign with references
+cat ri_sequences_qc.fa src/references.fa > ri_sequences_qc_references.fa
+$BIN/nextalign \
+	--sequences=ri_sequences_qc_references.fa \
+	--reference=src/reference.fasta \
+	--genemap=src/genemap.gff \
+	--genes=E,M,N,ORF10,ORF14,ORF1a,ORF1b,ORF3a,ORF6,ORF7a,ORF7b,ORF8,ORF9b,S \
+	--output-dir=results/nextalign-references \
+	--include-reference
+
+# Tree
+$BIN/iqtree2 -s results/nextalign-references/ri_sequences_qc_references.aligned.fasta --prefix results/iqtree2 -st DNA -m GTR+F --mem 8G

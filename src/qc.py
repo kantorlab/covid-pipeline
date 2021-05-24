@@ -1,4 +1,5 @@
 import pandas as pd
+from Bio import SeqIO
 
 ri = pd.read_csv("ri_metadata.tsv", sep="\t").sort_values("date")
 
@@ -29,10 +30,20 @@ ri = ri.merge(cdc, how="left", on="pangolin.lineage")
 
 failed = (
     (ri["pangolin.status"] != "passed_qc") |
-    (ri["nextclade.qc.overallStatus"] == "bad") |
-    (ri["nextstrain.flagging_reason"].notnull())
+    (ri["strain"].str.startswith("hCoV-19/USA/RI_RKL") & (
+        (ri["nextclade.qc.overallStatus"] == "bad") |
+        (ri["nextstrain.flagging_reason"].notnull())
+    ))
 )
 
 ri[failed].to_csv("results/qc-failed.csv", index=False)
 ri[~failed].to_csv("results/qc-passed.csv", index=False)
+
+# Filter sequences
+passed = frozenset(ri[~failed]["strain"])
+with open("ri_sequences_qc.fa", "w") as f:
+    for record in SeqIO.parse("ri_sequences.fa", "fasta"):
+        if record.id in passed:
+            print(">"+record.id, file=f)
+            print(record.seq, file=f)
 
