@@ -1,27 +1,30 @@
 library(tidyverse)
 
-ri <- read_csv("results/qc-passed.csv") %>%
-      select(strain, date, pangolin.lineage, cdc.classification) %>%
-      arrange(date)
+ri <- read_csv("results/concern-long.csv")
 
-muts <- read_csv("results/concern-long.csv") %>%
-        select(sample, mutation) %>%
-        rename(strain=sample) %>%
-        mutate(value=1) %>%
-        pivot_wider(names_from=mutation, values_from=value)
-print(muts)
+mutations <- ri %>% group_by(mutation) %>% tally() %>% arrange(-n)
+print(mutations)
 
-ri <- left_join(ri, muts, by="strain") %>%
-      mutate(step=1,
-             voc=as.factor(case_when(cdc.classification == "VOC" ~ "VOC/VOI",
-                                     cdc.classification == "VOI" ~ "VOC/VOI",
-                                     `S:E484K` == 1  & `S:D614G` == 1 ~ "Non-VOC/Non-VOI with E484K and D614G",
-                                     `S:E484K` == 1 ~ "Non-VOC/Non-VOI with E484K",
-                                     `S:D614G` == 1 ~ "Non-VOC/Non-VOI with D614G",
-                                     TRUE                          ~ "Other")))
+top5 <- head(mutations$mutation, 5)
+print(top5)
+
+colors <- c(
+  "#e41a1c",
+  "#377eb8",
+  "#4daf4a",
+  "#984ea3",
+  "#ff7f00",
+  "darkgray"
+)
+names(colors) <- c(top5, "Other")
+print(colors)
+
+ri <- mutate(ri,
+             step=1,
+             voc=case_when(mutation %in% top5 ~ mutation,
+                           TRUE               ~ "Other"))
 
 nseq <- nrow(ri)
-nnon <- sum(ri$voc != "VOC/VOI")
 earliest <- min(ri$date)
 latest <- max(ri$date)
 
@@ -51,34 +54,15 @@ print(ri)
 write_csv(ri, "results/non-voc-voi-mutations.csv")
 
 ri <- ri %>%
-  pivot_longer(!week, names_to="voc", values_to="Cumulative") %>%
-  mutate(voc=factor(voc, levels=c(
-    "VOC/VOI",
-    "Non-VOC/Non-VOI with E484K and D614G",
-    "Non-VOC/Non-VOI with E484K",
-    "Non-VOC/Non-VOI with D614G",
-    "Other"
-  )))
+  pivot_longer(!week, names_to="voc", values_to="Cumulative") %>% mutate(voc=factor(voc, levels=c(top5, "Other")))
 print(ri)
 
 g <- ggplot(data=ri) +
-geom_area(aes(x=week, y=Cumulative, fill=voc)) +
-geom_hline(yintercept=nseq, linetype="dashed", color="black", size=0.25) +
-geom_text(
-  data=data.frame(x=earliest, y=c(1.02*nseq), label=c(paste(scales::comma(nseq), "RI SARS-CoV-2 sequences as of", strftime(latest, format="%B %-m, %Y")))),
-  aes(x=x, y=y, label=label, vjust=0, hjust=0),
-  size=2.5
-) +
-geom_hline(yintercept=nnon, linetype="dashed", color="black", size=0.25) +
-geom_text(
-  data=data.frame(x=earliest, y=c(1.02*nnon), label=c(paste(scales::comma(nnon), "non-COV/non-COI sequences"))),
-  aes(x=x, y=y, label=label, vjust=0, hjust=0),
-  size=2.5
-) +
+geom_bar(aes(x=week, y=Cumulative, fill=voc), stat="identity") +
 labs(
   x="Date of Sample",
-  y="Cumulative Number of Sequences",
-  fill="CDC Classification"
+  y="Cumulative Number of Mutations",
+  fill="Mutation"
 ) +
 scale_x_date(
   breaks=waiver(),
@@ -86,25 +70,11 @@ scale_x_date(
   labels=waiver(),
   date_labels="%b %Y"
 ) +
-scale_y_continuous(breaks=seq(0, 3000, 500), position="right") +
-scale_fill_manual(
-  values=c(
-    "VOC/VOI"="darkgray",
-    "Non-VOC/Non-VOI with E484K and D614G"="#f46d43",
-    "Non-VOC/Non-VOI with E484K"="#fdae61",
-    "Non-VOC/Non-VOI with D614G"="#fee090",
-    "Other"="gray"
-  )
-) +
+scale_fill_manual(values=colors) +
 theme_classic() +
 theme(
   title=element_text(size=9),
-  legend.position=c(0, 0.35),
-  legend.justification=c("left", "center"),
-  legend.title=element_text(size=9),
-  legend.text=element_text(size=8),
-  legend.key.size=unit(0.1, "in"),
-  legend.background=element_blank(),
+  legend.position="top",
   axis.line=element_blank(),
   axis.ticks.x=element_line(size=0.25),
   axis.ticks.y=element_blank(),
@@ -117,3 +87,6 @@ pdf(file="results/non-voc-voi-mutations.pdf", width=4, height=3.5)
 print(g)
 dev.off()
 
+win.metafile(file="results/non-voc-voi-mutations.wmf", width=4, height=3.5)
+print(g)
+dev.off()
