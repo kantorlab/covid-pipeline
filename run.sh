@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -c 1
 #SBATCH --mem=8G
-#SBATCH -t 1:00:00
+#SBATCH -t 12:00:00
 
 set -e
 CONDA=/gpfs/data/rkantor/conda/bin

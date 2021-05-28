@@ -67,7 +67,7 @@ detail = []
 for _, row in seqs.iterrows():
     for mutation in mutations.get(row.strain, []):
         if mutation in concern:
-            if row["cdc.classification"] == "VOC" and not row["pangolin.lineage"] in concern[mutation]:
+            if not row["pangolin.lineage"] in concern[mutation]:
                 detail.append([row.strain, row.date, mutation])
 
 detail = pd.DataFrame.from_records(detail, columns=["strain", "date", "mutation"])

@@ -5,21 +5,18 @@ ri <- read_csv("results/concern-long.csv")
 mutations <- ri %>% group_by(mutation) %>% tally() %>% arrange(-n)
 print(mutations)
 
-top5 <- head(mutations$mutation, 7)
+top5 <- head(mutations$mutation, 5)
 print(top5)
-#top5 <- c("S:K417T", "S:L452R", "S:S477N", "S:T478K", "S:E484K", "S:S494P", "S:N501Y")
 
 colors <- c(
-  "#a6cee3",
-  "#1f78b4",
-  "#b2df8a",
-  "#33a02c",
-  "#fb9a99",
-  "#e31a1c",
-  "#fdbf6f",
+  "#e41a1c",
+  "#377eb8",
+  "#4daf4a",
+  "#984ea3",
+  "#ff7f00",
   "darkgray"
 )
-names(colors) <- c(top5, "Other")
+names(colors) <- c(top5[1:4], "S:H69-/S:V70-", "Other")
 print(colors)
 
 ri <- mutate(ri,
@@ -54,10 +51,8 @@ ri <- tibble(week=seq.Date(from=lubridate::floor_date(earliest, unit="week"), to
 
 print(ri)
 
-write_csv(ri, "results/non-voc-voi-mutations.csv")
-
 ri <- ri %>%
-  pivot_longer(!week, names_to="voc", values_to="Cumulative") %>% mutate(voc=factor(voc, levels=c(top5, "Other")))
+  pivot_longer(!week, names_to="voc", values_to="Cumulative") %>% mutate(voc=factor(voc, levels=c(top5, "Other"), labels=c(top5[1:4], "S:H69-/S:V70-", "Other")))
 print(ri)
 
 g <- ggplot(data=ri) +
@@ -88,10 +83,10 @@ theme(
   panel.grid.major.y=element_line(color="gray", size=0.1)
 )
 
-pdf(file="results/non-voc-voi-mutations.pdf", width=4, height=3.5)
+pdf(file="results/Figure5.pdf", width=4, height=3.5)
 print(g)
 dev.off()
 
-win.metafile(file="results/non-voc-voi-mutations.wmf", width=4, height=3.5)
+win.metafile(file="results/Figure5.wmf", width=4, height=3.5)
 print(g)
 dev.off()
