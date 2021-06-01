@@ -20,7 +20,7 @@ nextstrain = pd.read_csv(
     "results/nextstrain-diagnostics-flagged.tsv",
     sep="\t",
     usecols=["strain", "flagging_reason"]).rename(
-	columns={"flagging_reason": "nextstrain.flagging_reason"}
+        columns={"flagging_reason": "nextstrain.flagging_reason"}
     )
 ri = ri.merge(nextstrain, how="outer", on="strain", validate="1:1")
 
@@ -30,10 +30,16 @@ ri = ri.merge(cdc, how="left", on="pangolin.lineage")
 
 failed = (
     (ri["pangolin.status"] != "passed_qc") |
-    (ri["strain"].str.startswith("hCoV-19/USA/RI_RKL") & (
-        (ri["nextclade.qc.overallStatus"] == "bad") |
-        (ri["nextstrain.flagging_reason"].notnull())
-    ))
+    (
+        (
+            ri["strain"].str.startswith("hCoV-19/USA/RI_RKL") |
+            ri["strain"].str.startswith("hCoV-19/USA/RI-RISHL")
+        ) &
+        (
+            (ri["nextclade.qc.overallStatus"] == "bad") |
+            (ri["nextstrain.flagging_reason"].notnull())
+        )
+    )
 )
 
 ri[failed].to_csv("results/qc-failed.csv", index=False)
