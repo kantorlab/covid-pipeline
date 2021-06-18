@@ -11,8 +11,10 @@ source $CONDA/activate covid-v1
 mkdir -p results
 
 # Run pangolin
-#pip install --upgrade git+https://github.com/cov-lineages/pangolin.git
-#pip install --upgrade git+https://github.com/cov-lineages/pangoLEARN.git
+pip uninstall -y pangolin
+pip install --upgrade git+https://github.com/cov-lineages/pangolin.git@v3.0.5
+pip uninstall -y pangoLEARN
+pip install --upgrade git+https://github.com/cov-lineages/pangoLEARN.git@2021-06-05
 pangolin ri_sequences.fa -o results/pangolin --alignment --no-temp
 
 # Run nextclade
