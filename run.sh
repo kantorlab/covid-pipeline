@@ -11,8 +11,8 @@ source $CONDA/activate covid-v1
 mkdir -p results
 
 # Run pangolin
-pip install --upgrade git+https://github.com/cov-lineages/pangolin.git
-pip install --upgrade git+https://github.com/cov-lineages/pangoLEARN.git
+#pip install --upgrade git+https://github.com/cov-lineages/pangolin.git
+#pip install --upgrade git+https://github.com/cov-lineages/pangoLEARN.git
 pangolin ri_sequences.fa -o results/pangolin --alignment --no-temp
 
 # Run nextclade
@@ -51,6 +51,8 @@ python src/concern.py
 Rscript src/num-sequences.R
 Rscript src/num-voc-voi.R
 Rscript src/top-lineages.R
+Rscript src/ridoh-report.R
+Rscript src/figures.R
 
 # Run nextalign with references
 cat ri_sequences_qc.fa src/references.fa > ri_sequences_qc_references.fa

@@ -42,14 +42,23 @@ failed = (
     )
 )
 
-ri[failed].to_csv("results/qc-failed.csv", index=False)
-ri[~failed].to_csv("results/qc-passed.csv", index=False)
+seq_len = {}
 
 # Filter sequences
 passed = frozenset(ri[~failed]["strain"])
 with open("ri_sequences_qc.fa", "w") as f:
     for record in SeqIO.parse("ri_sequences.fa", "fasta"):
+        seq_len[record.id] = sum(1 for nt in str(record.seq).upper() if nt != "-" and nt != "N")
         if record.id in passed:
             print(">"+record.id, file=f)
             print(record.seq, file=f)
+
+ri = ri.merge(
+  pd.DataFrame({"strain": list(seq_len.keys()), "seq_len": list(seq_len.values())}),
+  how="left",
+  on="strain"
+)
+
+ri[failed].to_csv("results/qc-failed.csv", index=False)
+ri[~failed].to_csv("results/qc-passed.csv", index=False)
 
