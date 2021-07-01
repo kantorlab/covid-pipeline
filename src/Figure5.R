@@ -16,7 +16,7 @@ colors <- c(
   "#ff7f00",
   "darkgray"
 )
-names(colors) <- c(top5[1:4], "S:H69-/S:V70-", "Other")
+names(colors) <- c(top5, "Other")
 print(colors)
 
 ri <- mutate(ri,
@@ -52,7 +52,7 @@ ri <- tibble(week=seq.Date(from=lubridate::floor_date(earliest, unit="week"), to
 print(ri)
 
 ri <- ri %>%
-  pivot_longer(!week, names_to="voc", values_to="Cumulative") %>% mutate(voc=factor(voc, levels=c(top5, "Other"), labels=c(top5[1:4], "S:H69-/S:V70-", "Other")))
+  pivot_longer(!week, names_to="voc", values_to="Cumulative") %>% mutate(voc=factor(voc, levels=c(top5, "Other")))
 print(ri)
 
 g <- ggplot(data=ri) +
@@ -84,6 +84,10 @@ theme(
 )
 
 pdf(file="results/Figure5.pdf", width=4, height=3.5)
+print(g)
+dev.off()
+
+png(file="results/Figure5.png", width=6.5, height=4.5, unit="in", res=300)
 print(g)
 dev.off()
 

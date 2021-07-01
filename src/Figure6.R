@@ -14,16 +14,17 @@ colors <- c(
   "#33a02c",
   "#fb9a99",
   "#e31a1c",
-  "#fdbf6f",
-  "darkgray"
+  "#fdbf6f"
+#  "darkgray"
 )
-names(colors) <- c(selected, "Other")
+names(colors) <- c(selected)
 print(colors)
 
 ri <- mutate(ri,
              step=1,
              voc=case_when(mutation %in% selected ~ mutation,
-                           TRUE                   ~ "Other"))
+                           TRUE                   ~ "Other")) %>%
+      filter(voc != "Other")
 
 nseq <- nrow(ri)
 earliest <- as.Date("2021-01-03")
@@ -51,6 +52,7 @@ ri <- tibble(week=seq.Date(from=lubridate::floor_date(earliest, unit="week"), to
   replace(is.na(.), 0)
 
 print(ri)
+print(tail(ri), width=1000)
 
 ri <- ri %>%
   pivot_longer(!week, names_to="voc", values_to="Cumulative") %>% mutate(voc=factor(voc, levels=c(selected, "Other")))
@@ -85,6 +87,10 @@ theme(
 )
 
 pdf(file="results/Figure6.pdf", width=4, height=3.5)
+print(g)
+dev.off()
+
+png(file="results/Figure6.png", width=6.5, height=4.5, units="in", res=300)
 print(g)
 dev.off()
 
