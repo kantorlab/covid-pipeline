@@ -11,10 +11,6 @@ source $CONDA/activate covid-v1
 mkdir -p results
 
 # Run pangolin
-pip uninstall -y pangolin
-pip install --upgrade git+https://github.com/cov-lineages/pangolin.git@v3.0.5
-pip uninstall -y pangoLEARN
-pip install --upgrade git+https://github.com/cov-lineages/pangoLEARN.git@2021-06-05
 pangolin ri_sequences.fa -o results/pangolin --alignment --no-temp
 
 # Run nextclade
@@ -46,25 +42,3 @@ python src/nextstrain-diagnostics.py \
 	--output-exclusion-list results/nextstrain-diagnostics-exclusion.txt
 python src/qc.py
 
-### All following commands use results/qc-passed.csv ###
-
-python src/mutations.py
-python src/concern.py
-Rscript src/num-sequences.R
-Rscript src/num-voc-voi.R
-Rscript src/top-lineages.R
-Rscript src/ridoh-report.R
-Rscript src/figures.R
-
-# Run nextalign with references
-cat ri_sequences_qc.fa src/references.fa > ri_sequences_qc_references.fa
-$BIN/nextalign \
-	--sequences=ri_sequences_qc_references.fa \
-	--reference=src/reference.fasta \
-	--genemap=src/genemap.gff \
-	--genes=E,M,N,ORF10,ORF14,ORF1a,ORF1b,ORF3a,ORF6,ORF7a,ORF7b,ORF8,ORF9b,S \
-	--output-dir=results/nextalign-references \
-	--include-reference
-
-# Tree
-$BIN/iqtree2 -s results/nextalign-references/ri_sequences_qc_references.aligned.fasta --prefix results/iqtree2 -st DNA -m GTR+F --mem 8G
