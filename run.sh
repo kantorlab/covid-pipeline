@@ -14,7 +14,7 @@ mkdir -p results
 pangolin ri_sequences.fa -o results/pangolin --alignment --no-temp
 
 # Run nextclade
-nextclade \
+$BIN/nextclade \
 	--input-fasta ri_sequences.fa \
 	--output-json 'results/nextclade.json' \
 	--output-csv 'results/nextclade.csv' \
