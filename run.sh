@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -c 1
-#SBATCH --mem=8G
+#SBATCH --mem=20G
 #SBATCH -t 12:00:00
 
 set -e
@@ -14,8 +14,10 @@ mkdir -p results
 pangolin ri_sequences.fa -o results/pangolin --alignment --no-temp
 
 # Run nextclade
-$BIN/nextclade \
-	--input-fasta ri_sequences.fa \
+$BIN/nextclade dataset get -n sars-cov-2 -o nextclade_dataset
+$BIN/nextclade run \
+	--input-fasta 'ri_sequences.fa' \
+	--input-dataset 'nextclade_dataset' \
 	--output-json 'results/nextclade.json' \
 	--output-csv 'results/nextclade.csv' \
 	--output-tsv 'results/nextclade.tsv' \
@@ -32,13 +34,13 @@ $BIN/nextalign \
 	--output-dir=results/nextalign
 
 # Quality control
-python src/metadata.py ri_sequences.fa > ri_metadata.tsv
-python src/nextstrain-diagnostics.py \
-	--alignment results/nextalign/ri_sequences.aligned.fasta \
-	--reference src/reference_seq.gb \
-	--metadata ri_metadata.tsv \
-	--output-diagnostics results/nextstrain-diagnostics.tsv \
-	--output-flagged results/nextstrain-diagnostics-flagged.tsv \
-	--output-exclusion-list results/nextstrain-diagnostics-exclusion.txt
-python src/qc.py
+#python src/metadata.py ri_sequences.fa > ri_metadata.tsv
+#python src/nextstrain-diagnostics.py \
+#	--alignment results/nextalign/ri_sequences.aligned.fasta \
+#	--reference src/reference_seq.gb \
+#	--metadata ri_metadata.tsv \
+#	--output-diagnostics results/nextstrain-diagnostics.tsv \
+#	--output-flagged results/nextstrain-diagnostics-flagged.tsv \
+#	--output-exclusion-list results/nextstrain-diagnostics-exclusion.txt
+#python src/qc.py
 
