@@ -4,9 +4,8 @@
 #SBATCH -t 12:00:00
 
 set -e
-CONDA=/gpfs/data/rkantor/conda/bin
-BIN=/gpfs/data/rkantor/bin
-source $CONDA/activate covid-v1
+BIN=bin
+conda activate covid-v1
 
 mkdir -p results
 
@@ -32,15 +31,4 @@ $BIN/nextalign \
 	--genemap=src/genemap.gff \
 	--genes=E,M,N,ORF10,ORF14,ORF1a,ORF1b,ORF3a,ORF6,ORF7a,ORF7b,ORF8,ORF9b,S \
 	--output-dir=results/nextalign
-
-# Quality control
-#python src/metadata.py ri_sequences.fa > ri_metadata.tsv
-#python src/nextstrain-diagnostics.py \
-#	--alignment results/nextalign/ri_sequences.aligned.fasta \
-#	--reference src/reference_seq.gb \
-#	--metadata ri_metadata.tsv \
-#	--output-diagnostics results/nextstrain-diagnostics.tsv \
-#	--output-flagged results/nextstrain-diagnostics-flagged.tsv \
-#	--output-exclusion-list results/nextstrain-diagnostics-exclusion.txt
-#python src/qc.py
 

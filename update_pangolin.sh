@@ -7,7 +7,7 @@ then
 	echo "usage: bash update-pangolin.sh NEW_PANGOLIN_VERSION NEW_DATA_VERSION"
 	exit 1
 fi
-source /gpfs/data/rkantor/conda/bin/activate covid-v1
+#conda activate covid-v3
 pip uninstall -y pangolin pangolin-data scorpio constellations
 pip install git+https://github.com/cov-lineages/scorpio.git
 pip install git+https://github.com/cov-lineages/constellations.git
